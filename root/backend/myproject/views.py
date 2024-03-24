@@ -25,7 +25,9 @@ from rest_framework.response import Response
 from dotenv import load_dotenv
 import os
 
-load_dotenv()
+
+dotenv_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), '.env')
+load_dotenv(dotenv_path)
 OPEN_AI_KEY = os.getenv("OPEN_AI_KEY")
 
 # @api_view(['GET'])
@@ -42,23 +44,28 @@ from rest_framework.response import Response
 @api_view(['GET'])
 def generate_rap_lyrics(request):
     # Load the API key from the environment variable
-    openai.api_key = os.getenv("OPENAI_API_KEY")
+    openai.api_key = OPEN_AI_KEY
     
     # Get a seed or topic from the request if provided
     topic = request.query_params.get('topic', 'freestyle rap')
 
     try:
         # Call the OpenAI API to generate rap lyrics
-        response = openai.Completion.create(
-            engine="text-davinci-003", # You might need to adjust the engine based on availability and capability
-            prompt=f"Write a short verse for a rap song about {topic}.",
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo-1106", # You might need to adjust the engine based on availability and capability
+            messages=[
+                {"role": "system", "content": "You are creating rap lyrics"},
+                {"role": "user", "content": "Create lyrics for a short rap song"}],
             temperature=0.7,
             max_tokens=100,
             top_p=1.0,
             frequency_penalty=0.0,
             presence_penalty=0.0
         )
-        lyrics = response.choices[0].text.strip()
+        
+        return Response({"lyrics": response})
+       
+       #  lyrics = response.choices[0].text.strip()
     except Exception as e:
         return Response({"error": str(e)}, status=500)
 
